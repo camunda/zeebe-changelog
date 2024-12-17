@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/urfave/cli"
-	"github.com/zeebe-io/zeebe-changelog/pkg/github"
-	"github.com/zeebe-io/zeebe-changelog/pkg/gitlog"
-	"github.com/zeebe-io/zeebe-changelog/pkg/progress"
 	"log"
 	"os"
+
+	"github.com/camunda/zeebe-changelog/pkg/github"
+	"github.com/camunda/zeebe-changelog/pkg/gitlog"
+	"github.com/camunda/zeebe-changelog/pkg/progress"
+	"github.com/urfave/cli"
 )
 
 const (

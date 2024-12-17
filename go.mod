@@ -1,4 +1,4 @@
-module github.com/zeebe-io/zeebe-changelog
+module github.com/camunda/zeebe-changelog
 
 go 1.13
 

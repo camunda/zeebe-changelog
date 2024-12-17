@@ -1,11 +1,11 @@
 # Zeebe Changelog
 
-[![Build Status](https://travis-ci.com/zeebe-io/zeebe-changelog.svg?branch=master)](https://travis-ci.com/zeebe-io/zeebe-changelog)
-[![Go Report Card](https://goreportcard.com/badge/github.com/zeebe-io/zeebe-changelog?style=flat-square)](https://goreportcard.com/report/github.com/zeebe-io/zeebe-changelog)
-[![Release](https://img.shields.io/github/release/zeebe-io/zeebe-changelog.svg?style=flat-square)](https://github.com/zeebe-io/zeebe-changelog/releases/latest)
-[![codecov](https://codecov.io/gh/zeebe-io/zeebe-changelog/branch/master/graph/badge.svg)](https://codecov.io/gh/zeebe-io/zeebe-changelog)
+[![Build Status](https://travis-ci.com/camunda/zeebe-changelog.svg?branch=master)](https://travis-ci.com/camunda/zeebe-changelog)
+[![Go Report Card](https://goreportcard.com/badge/github.com/camunda/zeebe-changelog?style=flat-square)](https://goreportcard.com/report/github.com/camunda/zeebe-changelog)
+[![Release](https://img.shields.io/github/release/camunda/zeebe-changelog.svg?style=flat-square)](https://github.com/camunda/zeebe-changelog/releases/latest)
+[![codecov](https://codecov.io/gh/camunda/zeebe-changelog/branch/master/graph/badge.svg)](https://codecov.io/gh/camunda/zeebe-changelog)
 
-Generate changelog for [Zeebe](github.com/zeebe-io/zeebe) project.
+Generate changelog for [Zeebe](github.com/camunda/camunda) project.
 
 
 ## Example usage
@@ -38,5 +38,5 @@ Generate changelog for [Zeebe](github.com/zeebe-io/zeebe) project.
   * Push tag: `git push origin <tag>`
 * Release ZCL
   * Run goreleaser: `$GOPATH/bin/goreleaser release`
-  * Verify on [release page](https://github.com/zeebe-io/zeebe-changelog/releases)
+  * Verify on [release page](https://github.com/camunda/zeebe-changelog/releases)
 
