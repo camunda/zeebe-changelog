@@ -45,6 +45,7 @@ func (ghc *Client) FetchIssues(githubOrg, githubRepo, label string) *Changelog {
 		}
 
 		for _, issue := range issues {
+		  fmt.Println("DEBUG: issue.Title=", issue.Title)
 			changelog.AddIssue(NewIssue(issue))
 		}
 
