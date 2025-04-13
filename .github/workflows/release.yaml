@@ -1,0 +1,24 @@
+name: Release
+
+on: [push]
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  github:
+    name: Github Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Install gorelease
+        run: |
+          go install github.com/goreleaser/goreleaser@v1.0.0
+          # chmod +x zcl
+
+      - name: gorelease
+        run: |
+          set -x
+          which gorelease
+          ~/go/bin/goreleaser/gorelease release
