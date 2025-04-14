@@ -10,8 +10,8 @@ defaults:
     shell: bash
 
 jobs:
-  github:
-    name: Github Release
+  release:
+    name: goreleaser release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -28,55 +28,49 @@ jobs:
           args: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  changelog:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Zeebe changelog tool
+        run: |
+          gh release download 0.9.0-debug --repo camunda/zeebe-changelog --pattern '*_Linux_i386.tar.gz'
+          tar -xzvf zeebe-changelog_*
+          chmod +x zcl
+      - name: Generate Changelog for patch release
+        id: gen-changelog
+        run: |
+          # We set some bash properties to better fail/debug this script
+          #
+          # * https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html
+          # * https://explainshell.com/explain?cmd=set+-euox+pipefail
+          #
+          # set -euox pipefail
 
-#      - name: Install gorelease
-#        run: |
-#          go install github.com/goreleaser/goreleaser@v1.0.0
-#          # chmod +x zcl
-#      - name: gorelease
-#        run: |
-#          set -x
-#          which gorelease
-#          gorelease release
-#      - name: Install Zeebe changelog tool
-#        run: |
-#          gh release download 0.9.0-debug --repo camunda/zeebe-changelog --pattern '*_Linux_i386.tar.gz'
-#          tar -xzvf zeebe-changelog_*
-#          chmod +x zcl
-#      - name: Generate Changelog for patch release
-#        id: gen-changelog
-#        run: |
-#          # We set some bash properties to better fail/debug this script
-#          #
-#          # * https://www.gnu.org/software/bash/manual/html_node/The-Set-Builtin.html
-#          # * https://explainshell.com/explain?cmd=set+-euox+pipefail
-#          #
-#          # set -euox pipefail
-#
-#          ./zcl generate --label version:0.9.0-debug --token=${{ secrets.GITHUB_TOKEN }}
-#
-#          # Default changelog value
-#          changelog="Release 0.9.0-debug"
-#
-#          changelog=$(./zcl generate --label version:0.9.0-debug --token=${{ secrets.GITHUB_TOKEN }})
-#
-#          echo changelog:
-#          echo $changelog
-#
-#          echo 'CHANGELOG<<EOF' >> $GITHUB_OUTPUT
-#          echo $changelog >> $GITHUB_OUTPUT
-#          echo 'EOF' >> $GITHUB_OUTPUT
-#
-#          # To show the changelog also as step summary
-#          echo "$changelog" >> $GITHUB_STEP_SUMMARY
-#      - name: Create Github release
-#        uses: ncipollo/release-action@v1
-#        with:
-#          name: "test-28426-changelog"
-#          #          artifacts: "release-artifacts/*"
-#          artifactErrorsFailBuild: true
-#          draft: true
-#          body: ${{ steps.gen-changelog.outputs.CHANGELOG }}
-#          token: ${{ secrets.GITHUB_TOKEN }}
-#          prerelease: true
-#          tag: ${{ inputs.releaseVersion }}
+          ./zcl generate --label version:0.9.0-debug --token=${{ secrets.GITHUB_TOKEN }}
+
+          # Default changelog value
+          changelog="Release 0.9.0-debug"
+
+          changelog=$(./zcl generate --label version:0.9.0-debug --token=${{ secrets.GITHUB_TOKEN }})
+
+          echo changelog:
+          echo $changelog
+
+          echo 'CHANGELOG<<EOF' >> $GITHUB_OUTPUT
+          echo $changelog >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+          # To show the changelog also as step summary
+          echo "$changelog" >> $GITHUB_STEP_SUMMARY
+      - name: Create Github release
+        uses: ncipollo/release-action@v1
+        with:
+          name: "test-28426-changelog"
+          #          artifacts: "release-artifacts/*"
+          artifactErrorsFailBuild: true
+          draft: true
+          body: ${{ steps.gen-changelog.outputs.CHANGELOG }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: true
+          tag: 0.9.0-debug
