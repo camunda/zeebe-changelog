@@ -58,6 +58,9 @@ func (c *Changelog) String() string {
 	issueListToString(&b, "Documentation", c.docs)
 	issueListToString(&b, "Merged Pull Requests", c.pullRequests)
 
+  log.Println("Changelog.String(): ", b.String())
+
+
 	return b.String()
 }
 
@@ -65,7 +68,6 @@ func issueListToString(b *bytes.Buffer, title string, issues []*Issue) {
 	if len(issues) > 0 {
 		b.WriteString(fmt.Sprintf("## %s\n", title))
 		for _, issue := range issues {
-		  log.Println("issueListToString: ", issue.String())
 			b.WriteString(fmt.Sprintf("* %s\n", issue.String()))
 		}
 	}
