@@ -1,7 +1,6 @@
 package github
 
 import (
-  "fmt"
 	"context"
 	"github.com/google/go-github/v28/github"
 	"golang.org/x/oauth2"
@@ -46,7 +45,6 @@ func (ghc *Client) FetchIssues(githubOrg, githubRepo, label string) *Changelog {
 		}
 
 		for _, issue := range issues {
-		  fmt.Println("DEBUG: issue.Title=", issue.Title)
 			changelog.AddIssue(NewIssue(issue))
 		}
 

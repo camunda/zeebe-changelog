@@ -3,6 +3,7 @@ package github
 import (
 	"bytes"
 	"fmt"
+	"log"
 )
 
 type Changelog struct {
@@ -64,6 +65,7 @@ func issueListToString(b *bytes.Buffer, title string, issues []*Issue) {
 	if len(issues) > 0 {
 		b.WriteString(fmt.Sprintf("## %s\n", title))
 		for _, issue := range issues {
+		  log.Println("issueListToString: ", issue.String())
 			b.WriteString(fmt.Sprintf("* %s\n", issue.String()))
 		}
 	}
