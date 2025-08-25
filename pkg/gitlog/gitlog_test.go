@@ -59,6 +59,16 @@ func TestExtractIssueIds(t *testing.T) {
 		"Multiple IDs without keywords": {message: "foo\n\nbar #234\n\nmerges #1", issueIds: []int{1}},
 		"ID with text after":            {message: "closes #4002 drop multi column families usage", issueIds: []int{4002}},
 		"Multiple ID with text after":   {message: "closes #5137 low load causes defragmentation\ncloses #4560 unstable cluster on bigger state", issueIds: []int{5137, 4560}},
+		"Full URL reference":            {message: "closes https://www.github.com/camunda/camunda/1234", issueIds: []int{1234}},
+		"Full old URL reference":        {message: "closes https://www.github.com/camunda/zeebe/1234", issueIds: []int{1234}},
+		"URL reference without www"      {message: "closes https://github.com/camunda/camunda/1234", issueIds: []int{1234}},
+		"Short reference"                {message: "closes camunda/camunda#1234", issueIds: []int{1234}},
+		"Short old reference"            {message: "closes camunda/zeebe#1234", issueIds: []int{1234}},
+		"Wrong repo reference URL"       {message: "closes https://www.github.com/camunda/operate/1234", issueIds: nil},
+		"Wrong repo short reference"     {message: "closes camunda/operate#1234", issueIds: nil},
+		"Wrong org URL reference"        {message: "closes https://www.github.com/zeebe-io/zeebe#1234", issueIds: nil},
+		"Wrong org short reference"      {message: "closes zeebe-io/zeebe#1234", issueIds: nil},
+		"Multiple issues mixed format":  {message: "closes #1234, camunda/zeebe#5678, camunda/camunda#9 and https://www.github.com/camunda/camunda/123", issueIds: []int{1234, 5678, 9, 123}},
 	}
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
