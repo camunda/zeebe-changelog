@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	lineRegex = regexp.MustCompile(`(?im)^\s*(closes?|related|relates|merges?|back\s?ports?)\s+.*$`)
-	idRegex   = regexp.MustCompile(`#(\d+)`)
+	lineRegex = regexp.MustCompile(`(?im)^\s*(closes?|related|relates|merges?|back\s?ports?|resolved|resolves)\s+.*$`)
+	idRegex   = regexp.MustCompile(`(#|(https?\:\/\/(www\.)?github\.com\/)?camunda\/(camunda|zeebe)(\/|#))(\d+)`)
 )
 
 func GetHistory(path, start, end string) string {
@@ -44,9 +44,9 @@ func ExtractIssueIds(message string) []int {
 
 	for _, line := range lineRegex.FindAllString(message, -1) {
 		for _, match := range idRegex.FindAllStringSubmatch(line, -1) {
-			issueId, err := strconv.Atoi(match[1])
+			issueId, err := strconv.Atoi(match[6])
 			if err != nil {
-				log.Fatalln("Cannot convert issue id", match[1], err)
+				log.Fatalln("Cannot convert issue id", match[6], err)
 			}
 
 			if !seen[issueId] {
