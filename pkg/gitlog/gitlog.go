@@ -10,7 +10,7 @@ import (
 
 var (
 	lineRegex = regexp.MustCompile(`(?im)^\s*(closes?|related|relates|merges?|back\s?ports?|resolved|resolves)\s+.*$`)
-	idRegex   = regexp.MustCompile(`(#|(https?\:\/\/(www\.)?github\.com\/)?camunda\/(camunda|zeebe)(\/|#))(\d+)`)
+	idRegex   = regexp.MustCompile(`(\s#|(https?\:\/\/(www\.)?github\.com\/)?camunda\/(camunda|zeebe)(\/|#))(\d+)`)
 )
 
 func GetHistory(path, start, end string) string {
