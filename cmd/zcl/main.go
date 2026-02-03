@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/camunda/zeebe-changelog/pkg/github"
 	"github.com/camunda/zeebe-changelog/pkg/gitlog"
@@ -140,6 +141,35 @@ func createApp() *cli.App {
 	return app
 }
 
+func addLabelsParallel(client *github.Client, githubOrg, githubRepo string, issueIds []int, label string, bar *progress.Bar) {
+	// Use a worker pool pattern with reasonable concurrency
+	// 10 workers provides good parallelism without overwhelming the GitHub API
+	const numWorkers = 10
+	jobs := make(chan int, len(issueIds))
+	var wg sync.WaitGroup
+
+	// Start worker goroutines
+	for w := 0; w < numWorkers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for issueId := range jobs {
+				client.AddLabel(githubOrg, githubRepo, issueId, label)
+				bar.Increase()
+			}
+		}()
+	}
+
+	// Send all issue IDs to workers
+	for _, id := range issueIds {
+		jobs <- id
+	}
+	close(jobs)
+
+	// Wait for all workers to complete
+	wg.Wait()
+}
+
 func addLabels(c *cli.Context) error {
 	token := c.String(gitApiTokenFlag)
 	gitDir := c.String(gitDirFlag)
@@ -162,10 +192,7 @@ func addLabels(c *cli.Context) error {
 	client := github.NewClient(token)
 	bar := progress.NewProgressBar(issueCount)
 
-	for _, id := range issueIds {
-		client.AddLabel(githubOrg, githubRepo, id, label)
-		bar.Increase()
-	}
+	addLabelsParallel(client, githubOrg, githubRepo, issueIds, label, bar)
 
 	return nil
 }
