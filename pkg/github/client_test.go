@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"strings"
 	"testing"
 
@@ -26,7 +27,7 @@ func TestAddLabel_404Error(t *testing.T) {
 	var buf bytes.Buffer
 	log.SetOutput(&buf)
 	defer func() {
-		log.SetOutput(nil)
+		log.SetOutput(os.Stderr)
 	}()
 
 	// Create a client with the test server
