@@ -21,6 +21,16 @@ Generate changelog for [Zeebe](github.com/camunda/camunda) project.
     --label="version:$ZCL_TARGET_REV" \
     --org camunda --repo zeebe
 
+  # Optional: Configure the number of concurrent workers (default: 10)
+  # This can speed up labeling of large numbers of issues
+  zcl add-labels \
+    --token=$GITHUB_TOKEN \
+    --from=$ZCL_FROM_REV \
+    --target=$ZCL_TARGET_REV \
+    --label="version:$ZCL_TARGET_REV" \
+    --org camunda --repo zeebe \
+    --workers=20
+
   # This command will print markdown code to the console. You will need to manually insert this output into the release draft.
   zcl generate \
      --token=$GITHUB_TOKEN \

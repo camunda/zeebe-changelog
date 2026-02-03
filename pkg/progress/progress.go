@@ -1,13 +1,9 @@
 package progress
 
-import (
-	"github.com/gosuri/uiprogress"
-	"sync"
-)
+import "github.com/gosuri/uiprogress"
 
 type Bar struct {
-	bar   *uiprogress.Bar
-	mutex sync.Mutex
+	bar *uiprogress.Bar
 }
 
 func NewProgressBar(size int) *Bar {
@@ -21,7 +17,5 @@ func NewProgressBar(size int) *Bar {
 }
 
 func (pb *Bar) Increase() {
-	pb.mutex.Lock()
-	defer pb.mutex.Unlock()
 	pb.bar.Incr()
 }
