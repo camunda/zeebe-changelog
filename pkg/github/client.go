@@ -5,6 +5,7 @@ import (
 	"github.com/google/go-github/v28/github"
 	"golang.org/x/oauth2"
 	"log"
+	"net/http"
 )
 
 type Client struct {
@@ -30,6 +31,11 @@ func NewClient(token string) *Client {
 func (ghc *Client) AddLabel(githubOrg string, githubRepo string, issueId int, label string) {
 	_, _, err := ghc.client.Issues.AddLabelsToIssue(ghc.ctx, githubOrg, githubRepo, issueId, []string{label})
 	if err != nil {
+		// Check if the error is a 404 Not Found error
+		if errResp, ok := err.(*github.ErrorResponse); ok && errResp.Response.StatusCode == http.StatusNotFound {
+			log.Printf("Warning: Issue #%d not found in %s/%s, skipping label addition\n", issueId, githubOrg, githubRepo)
+			return
+		}
 		log.Fatalln(err)
 	}
 }
