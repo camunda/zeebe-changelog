@@ -30,6 +30,9 @@ const (
 	githubRepoFlag    = "repo"
 	githubRepoEnv     = "ZCL_REPO"
 	githubRepoDefault = "zeebe"
+	workersFlag       = "workers"
+	workersEnv        = "ZCL_WORKERS"
+	workersDefault    = 10
 )
 
 var (
@@ -101,6 +104,12 @@ func createApp() *cli.App {
 					EnvVar: githubRepoEnv,
 					Value:  githubRepoDefault,
 				},
+				cli.IntFlag{
+					Name:   workersFlag,
+					Usage:  "Number of concurrent workers for labeling",
+					EnvVar: workersEnv,
+					Value:  workersDefault,
+				},
 			},
 			Action: addLabels,
 		},
@@ -141,10 +150,8 @@ func createApp() *cli.App {
 	return app
 }
 
-func addLabelsParallel(client *github.Client, githubOrg, githubRepo string, issueIds []int, label string, bar *progress.Bar) {
+func addLabelsParallel(client *github.Client, githubOrg, githubRepo string, issueIds []int, label string, bar *progress.Bar, numWorkers int) {
 	// Use a worker pool pattern with reasonable concurrency
-	// 10 workers provides good parallelism without overwhelming the GitHub API
-	const numWorkers = 10
 	jobs := make(chan int, len(issueIds))
 	var wg sync.WaitGroup
 
@@ -178,6 +185,7 @@ func addLabels(c *cli.Context) error {
 	githubOrg := c.String(githubOrgFlag)
 	githubRepo := c.String(githubRepoFlag)
 	label := c.String(labelFlag)
+	workers := c.Int(workersFlag)
 
 	log.Println("Fetching git history in dir", gitDir, "for", from, "..", target)
 
@@ -187,12 +195,12 @@ func addLabels(c *cli.Context) error {
 	issueIds := gitlog.ExtractIssueIds(commits)
 
 	issueCount := len(issueIds)
-	log.Println("Updating", issueCount, "issues")
+	log.Println("Updating", issueCount, "issues with", workers, "workers")
 
 	client := github.NewClient(token)
 	bar := progress.NewProgressBar(issueCount)
 
-	addLabelsParallel(client, githubOrg, githubRepo, issueIds, label, bar)
+	addLabelsParallel(client, githubOrg, githubRepo, issueIds, label, bar, workers)
 
 	return nil
 }
