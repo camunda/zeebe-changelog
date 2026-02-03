@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/camunda/zeebe-changelog/pkg/github"
 	"github.com/camunda/zeebe-changelog/pkg/gitlog"
@@ -29,6 +30,9 @@ const (
 	githubRepoFlag    = "repo"
 	githubRepoEnv     = "ZCL_REPO"
 	githubRepoDefault = "zeebe"
+	workersFlag       = "workers"
+	workersEnv        = "ZCL_WORKERS"
+	workersDefault    = 10
 )
 
 var (
@@ -100,6 +104,12 @@ func createApp() *cli.App {
 					EnvVar: githubRepoEnv,
 					Value:  githubRepoDefault,
 				},
+				cli.IntFlag{
+					Name:   workersFlag,
+					Usage:  "Number of concurrent workers for labeling",
+					EnvVar: workersEnv,
+					Value:  workersDefault,
+				},
 			},
 			Action: addLabels,
 		},
@@ -140,6 +150,33 @@ func createApp() *cli.App {
 	return app
 }
 
+func addLabelsParallel(client *github.Client, githubOrg, githubRepo string, issueIds []int, label string, bar *progress.Bar, numWorkers int) {
+	// Use a worker pool pattern with reasonable concurrency
+	jobs := make(chan int, len(issueIds))
+	var wg sync.WaitGroup
+
+	// Start worker goroutines
+	for w := 0; w < numWorkers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for issueId := range jobs {
+				client.AddLabel(githubOrg, githubRepo, issueId, label)
+				bar.Increase()
+			}
+		}()
+	}
+
+	// Send all issue IDs to workers
+	for _, id := range issueIds {
+		jobs <- id
+	}
+	close(jobs)
+
+	// Wait for all workers to complete
+	wg.Wait()
+}
+
 func addLabels(c *cli.Context) error {
 	token := c.String(gitApiTokenFlag)
 	gitDir := c.String(gitDirFlag)
@@ -148,6 +185,12 @@ func addLabels(c *cli.Context) error {
 	githubOrg := c.String(githubOrgFlag)
 	githubRepo := c.String(githubRepoFlag)
 	label := c.String(labelFlag)
+	numWorkers := c.Int(workersFlag)
+
+	// Validate number of workers
+	if numWorkers <= 0 {
+		log.Fatalf("Number of workers must be positive, got: %d", numWorkers)
+	}
 
 	log.Println("Fetching git history in dir", gitDir, "for", from, "..", target)
 
@@ -157,15 +200,12 @@ func addLabels(c *cli.Context) error {
 	issueIds := gitlog.ExtractIssueIds(commits)
 
 	issueCount := len(issueIds)
-	log.Println("Updating", issueCount, "issues")
+	log.Println("Updating", issueCount, "issues with", numWorkers, "workers")
 
 	client := github.NewClient(token)
 	bar := progress.NewProgressBar(issueCount)
 
-	for _, id := range issueIds {
-		client.AddLabel(githubOrg, githubRepo, id, label)
-		bar.Increase()
-	}
+	addLabelsParallel(client, githubOrg, githubRepo, issueIds, label, bar, numWorkers)
 
 	return nil
 }
