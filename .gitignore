@@ -18,3 +18,6 @@ dist/
 .idea/
 
 coverage.txt
+
+# Test cloned repositories
+pkg/gitlog/zeebe/
