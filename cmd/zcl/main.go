@@ -185,7 +185,12 @@ func addLabels(c *cli.Context) error {
 	githubOrg := c.String(githubOrgFlag)
 	githubRepo := c.String(githubRepoFlag)
 	label := c.String(labelFlag)
-	workers := c.Int(workersFlag)
+	numWorkers := c.Int(workersFlag)
+
+	// Validate number of workers
+	if numWorkers <= 0 {
+		log.Fatalf("Number of workers must be positive, got: %d", numWorkers)
+	}
 
 	log.Println("Fetching git history in dir", gitDir, "for", from, "..", target)
 
@@ -195,12 +200,12 @@ func addLabels(c *cli.Context) error {
 	issueIds := gitlog.ExtractIssueIds(commits)
 
 	issueCount := len(issueIds)
-	log.Println("Updating", issueCount, "issues with", workers, "workers")
+	log.Println("Updating", issueCount, "issues with", numWorkers, "workers")
 
 	client := github.NewClient(token)
 	bar := progress.NewProgressBar(issueCount)
 
-	addLabelsParallel(client, githubOrg, githubRepo, issueIds, label, bar, workers)
+	addLabelsParallel(client, githubOrg, githubRepo, issueIds, label, bar, numWorkers)
 
 	return nil
 }
