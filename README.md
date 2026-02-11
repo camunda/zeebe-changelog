@@ -1,6 +1,5 @@
 # Zeebe Changelog
 
-[![Build Status](https://travis-ci.com/camunda/zeebe-changelog.svg?branch=master)](https://travis-ci.com/camunda/zeebe-changelog)
 [![Go Report Card](https://goreportcard.com/badge/github.com/camunda/zeebe-changelog?style=flat-square)](https://goreportcard.com/report/github.com/camunda/zeebe-changelog)
 [![Release](https://img.shields.io/github/release/camunda/zeebe-changelog.svg?style=flat-square)](https://github.com/camunda/zeebe-changelog/releases/latest)
 [![codecov](https://codecov.io/gh/camunda/zeebe-changelog/branch/master/graph/badge.svg)](https://codecov.io/gh/camunda/zeebe-changelog)
