@@ -2,34 +2,82 @@ package gitlog
 
 import (
 	"log"
+	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
-import "github.com/stretchr/testify/assert"
+
+func runGit(t *testing.T, dir string, args ...string) string {
+	t.Helper()
+	cmd := exec.Command("git", args...)
+	cmd.Dir = dir
+	// avoid hanging on any credential prompts
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
+	log.Println(cmd)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git %s failed: %v\n%s", strings.Join(args, " "), err, string(out))
+	}
+	return string(out)
+}
+
+func prepareCamundaRepo(t *testing.T, tagA, tagB string) string {
+	t.Helper()
+	repoDir := filepath.Join(t.TempDir(), "camunda")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatalf("mkdir temp repo: %v", err)
+	}
+
+	runGit(t, repoDir, "init")
+	runGit(t, repoDir, "remote", "add", "origin", "https://github.com/camunda/camunda.git")
+
+	// Fetch only the tags we care about. Use a partial clone filter if available.
+	fetchArgs := []string{"fetch", "--no-tags", "--filter=blob:none", "origin", "tag", tagA, "tag", tagB}
+	cmd := exec.Command("git", fetchArgs...)
+	cmd.Dir = repoDir
+	cmd.Env = append(os.Environ(), "GIT_TERMINAL_PROMPT=0")
+	log.Println(cmd)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		// Fallback for older git versions without partial clone support.
+		log.Printf("partial fetch failed, retrying without filter: %v\n%s", err, string(out))
+		runGit(t, repoDir, "fetch", "--no-tags", "origin", "tag", tagA, "tag", tagB)
+	}
+
+	// Ensure tags are present locally (handles annotated tags)
+	runGit(t, repoDir, "fetch", "--tags", "--force", "origin")
+	return repoDir
+}
 
 func TestGitHistory(t *testing.T) {
-
-	// clone zeebe repo to test with merge commits
-	command := exec.Command("git", "clone", "-b", "8.5.0", "https://github.com/camunda/zeebe.git", "zeebe")
-	log.Println(command)
-
-	out, _ := command.CombinedOutput()
-	log.Println(out)
-
 	// use git command til git lib implements range feature, see https://github.com/src-d/go-git/issues/1166
 	tests := map[string]struct {
-		path  string
-		start string
-		end   string
-		size  int
+		path        string
+		start       string
+		end         string
+		size        int
+		needCamunda bool
 	}{
-		"First commit in zcl":        {path: ".", start: "7b86247", end: "7ab8381", size: 0},
-		"Between tags in zeebe repo": {path: "zeebe", start: "8.5.0", end: "8.6.0-alpha1", size: 1559610},
+		"First commit in zcl":          {path: ".", start: "7b86247", end: "7ab8381", size: 0},
+		"Between tags in camunda repo": {start: "8.5.0", end: "8.6.0-alpha1", size: 1559610, needCamunda: true},
 	}
+
+	var camundaRepo string
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
+			path := tc.path
+			if tc.needCamunda {
+				if camundaRepo == "" {
+					camundaRepo = prepareCamundaRepo(t, "8.5.0", "8.6.0-alpha1")
+				}
+				path = camundaRepo
+			}
 
-			log := GetHistory(tc.path, tc.start, tc.end)
+			log := GetHistory(path, tc.start, tc.end)
 			assert.Equal(t, tc.size, len(log))
 		})
 	}
