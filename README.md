@@ -41,11 +41,13 @@ Generate changelog for [Zeebe](github.com/camunda/camunda) project.
 
 * [Prerequisite] Install [goreleaser](https://goreleaser.com/intro/#usage)
   * We have experienced issues with the recent versions (likely the project is not compatible with the recent versions)
-  * To overcome this we used (in the last releases): `go install github.com/goreleaser/goreleaser@v1.0.0`
+    * To overcome this we used (in the last releases): `go install github.com/goreleaser/goreleaser@v1.0.0`
 * Create a new tag with the latest changes:
   * Create tag local: `git tag <version>`
-  * Push tag: `git push origin <tag>`
+  * Push tag: `git push origin <version>`
 * Release ZCL
-  * Run goreleaser: `$GOPATH/bin/goreleaser release`
+  * Run goreleaser:
+    ```sh
+    GITHUB_TOKEN=$(gh auth token) $(go env GOPATH)/bin/goreleaser release
+    ```  
   * Verify on [release page](https://github.com/camunda/zeebe-changelog/releases)
-
