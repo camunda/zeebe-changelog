@@ -33,6 +33,8 @@ const (
 	workersFlag       = "workers"
 	workersEnv        = "ZCL_WORKERS"
 	workersDefault    = 10
+	dryRunFlag        = "dry-run"
+	dryRunEnv         = "ZCL_DRY_RUN"
 )
 
 var (
@@ -110,6 +112,11 @@ func createApp() *cli.App {
 					EnvVar: workersEnv,
 					Value:  workersDefault,
 				},
+				cli.BoolFlag{
+					Name:   dryRunFlag,
+					Usage:  "Print issues that would be labeled without making any changes",
+					EnvVar: dryRunEnv,
+				},
 			},
 			Action: addLabels,
 		},
@@ -186,6 +193,7 @@ func addLabels(c *cli.Context) error {
 	githubRepo := c.String(githubRepoFlag)
 	label := c.String(labelFlag)
 	numWorkers := c.Int(workersFlag)
+	dryRun := c.Bool(dryRunFlag)
 
 	// Validate number of workers
 	if numWorkers <= 0 {
@@ -200,6 +208,20 @@ func addLabels(c *cli.Context) error {
 	issueIds := gitlog.ExtractIssueIds(commits)
 
 	issueCount := len(issueIds)
+
+	if dryRun {
+		log.Println("[dry-run] Would add label", label, "to", issueCount, "issues in", githubOrg+"/"+githubRepo)
+	} else {
+		log.Println("Adding label", label, "to", issueCount, "issues in", githubOrg+"/"+githubRepo)
+	}
+	for _, id := range issueIds {
+		fmt.Printf("  https://github.com/%s/%s/issues/%d\n", githubOrg, githubRepo, id)
+	}
+
+	if dryRun {
+		return nil
+	}
+
 	log.Println("Updating", issueCount, "issues with", numWorkers, "workers")
 
 	client := github.NewClient(token)
