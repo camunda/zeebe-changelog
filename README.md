@@ -4,7 +4,7 @@
 [![Release](https://img.shields.io/github/release/camunda/zeebe-changelog.svg?style=flat-square)](https://github.com/camunda/zeebe-changelog/releases/latest)
 [![codecov](https://codecov.io/gh/camunda/zeebe-changelog/branch/master/graph/badge.svg)](https://codecov.io/gh/camunda/zeebe-changelog)
 
-Generate changelog for [Zeebe](github.com/camunda/camunda) project.
+Generate changelog for [Camunda 8](github.com/camunda/camunda) project.
 
 
 ## Example usage
@@ -19,7 +19,7 @@ Generate changelog for [Zeebe](github.com/camunda/camunda) project.
     --from=$ZCL_FROM_REV \
     --target=$ZCL_TARGET_REV \
     --label="version:$ZCL_TARGET_REV" \
-    --org camunda --repo zeebe
+    --org camunda --repo camunda
 
   # Optional: Configure the number of concurrent workers (default: 10)
   # This can speed up labeling of large numbers of issues
@@ -28,14 +28,23 @@ Generate changelog for [Zeebe](github.com/camunda/camunda) project.
     --from=$ZCL_FROM_REV \
     --target=$ZCL_TARGET_REV \
     --label="version:$ZCL_TARGET_REV" \
-    --org camunda --repo zeebe \
+    --org camunda --repo camunda \
     --workers=20
+
+  # Optional: Dry run to preview which issues would be labeled without making any changes
+  zcl add-labels \
+    --token=$GITHUB_TOKEN \
+    --from=$ZCL_FROM_REV \
+    --target=$ZCL_TARGET_REV \
+    --label="version:$ZCL_TARGET_REV" \
+    --org camunda --repo camunda \
+    --dry-run
 
   # This command will print markdown code to the console. You will need to manually insert this output into the release draft.
   zcl generate \
      --token=$GITHUB_TOKEN \
      --label="version:$ZCL_TARGET_REV" \
-     --org camunda --repo zeebe
+     --org camunda --repo camunda
 ```
 ## Release ZCL
 
