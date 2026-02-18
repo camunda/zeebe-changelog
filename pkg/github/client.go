@@ -2,7 +2,7 @@ package github
 
 import (
 	"context"
-	"github.com/google/go-github/v28/github"
+	"github.com/google/go-github/v83/github"
 	"golang.org/x/oauth2"
 	"log"
 	"net/http"
@@ -58,7 +58,7 @@ func (ghc *Client) FetchIssues(githubOrg, githubRepo, label string) *Changelog {
 			break
 		}
 
-		options.Page = response.NextPage
+		options.ListOptions.Page = response.NextPage
 	}
 
 	return changelog

@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-github/v28/github"
+	"github.com/google/go-github/v83/github"
 )
 
 func TestAddLabel_404Error(t *testing.T) {
