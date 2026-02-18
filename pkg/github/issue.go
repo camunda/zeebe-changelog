@@ -2,7 +2,7 @@ package github
 
 import (
 	"fmt"
-	"github.com/google/go-github/v28/github"
+	"github.com/google/go-github/v83/github"
 )
 
 const (
@@ -47,7 +47,7 @@ func NewIssue(issue *github.Issue) *Issue {
 	}
 }
 
-func mapLabels(labelList []github.Label) map[string]bool {
+func mapLabels(labelList []*github.Label) map[string]bool {
 	labels := make(map[string]bool)
 	for _, label := range labelList {
 		labelName := label.GetName()

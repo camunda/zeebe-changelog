@@ -1,7 +1,7 @@
 package github
 
 import (
-	"github.com/google/go-github/v28/github"
+	"github.com/google/go-github/v83/github"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -164,13 +164,13 @@ func TestIssue_String(t *testing.T) {
 
 func createIssue(title string, number int, url string, pullRequest bool, labels ...string) *Issue {
 	var pullRequestLinks *github.PullRequestLinks
-	var labelList []github.Label
+	var labelList []*github.Label
 
 	if labels != nil {
-		labelList = []github.Label{}
+		labelList = []*github.Label{}
 		for _, label := range labels {
 			labelCopy := label
-			labelList = append(labelList, github.Label{Name: &labelCopy})
+			labelList = append(labelList, &github.Label{Name: &labelCopy})
 		}
 	}
 
