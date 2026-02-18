@@ -15,6 +15,7 @@ const (
 	bugLabel        = "kind/bug"
 	docsLabel       = "kind/documentation"
 	toilLabel       = "kind/toil"
+	taskLabel       = "kind/task"
 )
 
 var knownLabels = []string{
@@ -27,6 +28,7 @@ var knownLabels = []string{
 	docsLabel,
 	zbctlLabel,
 	toilLabel,
+	taskLabel,
 }
 
 type Issue struct {
@@ -94,6 +96,10 @@ func (i *Issue) HasZbctlLabel() bool {
 
 func (i *Issue) HasToilLabel() bool {
 	return i.hasLabel(toilLabel)
+}
+
+func (i *Issue) HasTaskLabel() bool {
+	return i.hasLabel(taskLabel)
 }
 
 func (i *Issue) hasLabel(label string) bool {
