@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"github.com/camunda/zeebe-changelog/pkg/github"
 	"github.com/camunda/zeebe-changelog/pkg/gitlog"
 	"github.com/camunda/zeebe-changelog/pkg/progress"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v3"
 )
 
 const (
@@ -44,117 +45,113 @@ var (
 
 func main() {
 	app := createApp()
-	err := app.Run(os.Args)
+	err := app.Run(context.Background(), os.Args)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func createApp() *cli.App {
-	app := cli.NewApp()
-	app.Name = appName
-	app.HelpName = appName
-	app.Usage = "Zeebe Changelog Helper"
-	app.Version = fmt.Sprintf("%s (commit: %s)", version, commit)
-
-	app.Commands = []cli.Command{
-		{
-			Name:      "add-labels",
-			ShortName: "a",
-			Usage:     "Add GitHub labels to issues and PRs",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:     gitDirFlag,
-					Usage:    "Git working directory",
-					EnvVar:   gitDirEnv,
-					Required: false,
-					Value:    ".",
+func createApp() *cli.Command {
+	return &cli.Command{
+		Name:    appName,
+		Usage:   "Zeebe Changelog Helper",
+		Version: fmt.Sprintf("%s (commit: %s)", version, commit),
+		Commands: []*cli.Command{
+			{
+				Name:    "add-labels",
+				Aliases: []string{"a"},
+				Usage:   "Add GitHub labels to issues and PRs",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:    gitDirFlag,
+						Usage:   "Git working directory",
+						Sources: cli.EnvVars(gitDirEnv),
+						Value:   ".",
+					},
+					&cli.StringFlag{
+						Name:     labelFlag,
+						Sources:  cli.EnvVars(labelEnv),
+						Usage:    "GitHub label to attach to issues and PRs",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:     fromFlag,
+						Sources:  cli.EnvVars(fromEnv),
+						Usage:    "Git revision to start start processing",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:     targetFlag,
+						Sources:  cli.EnvVars(targetEnv),
+						Usage:    "Git revision to stop commit processing",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:     gitApiTokenFlag,
+						Usage:    "GitHub API Token",
+						Sources:  cli.EnvVars(gitApiTokenEnv),
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:    githubOrgFlag,
+						Usage:   "GitHub organization",
+						Sources: cli.EnvVars(githubOrgEnv),
+						Value:   githubOrgDefault,
+					},
+					&cli.StringFlag{
+						Name:    githubRepoFlag,
+						Usage:   "GitHub repository",
+						Sources: cli.EnvVars(githubRepoEnv),
+						Value:   githubRepoDefault,
+					},
+					&cli.IntFlag{
+						Name:    workersFlag,
+						Usage:   "Number of concurrent workers for labeling",
+						Sources: cli.EnvVars(workersEnv),
+						Value:   workersDefault,
+					},
+					&cli.BoolFlag{
+						Name:    dryRunFlag,
+						Usage:   "Print issues that would be labeled without making any changes",
+						Sources: cli.EnvVars(dryRunEnv),
+					},
 				},
-				cli.StringFlag{
-					Name:     labelFlag,
-					EnvVar:   labelEnv,
-					Usage:    "GitHub label to attach to issues and PRs",
-					Required: true,
-				},
-				cli.StringFlag{
-					Name:     fromFlag,
-					EnvVar:   fromEnv,
-					Usage:    "Git revision to start start processing",
-					Required: true,
-				},
-				cli.StringFlag{
-					Name:     targetFlag,
-					EnvVar:   targetEnv,
-					Usage:    "Git revision to stop commit processing",
-					Required: true,
-				},
-				cli.StringFlag{
-					Name:     gitApiTokenFlag,
-					Usage:    "GitHub API Token",
-					EnvVar:   gitApiTokenEnv,
-					Required: true,
-				},
-				cli.StringFlag{
-					Name:   githubOrgFlag,
-					Usage:  "GitHub organization",
-					EnvVar: githubOrgEnv,
-					Value:  githubOrgDefault,
-				},
-				cli.StringFlag{
-					Name:   githubRepoFlag,
-					Usage:  "GitHub repository",
-					EnvVar: githubRepoEnv,
-					Value:  githubRepoDefault,
-				},
-				cli.IntFlag{
-					Name:   workersFlag,
-					Usage:  "Number of concurrent workers for labeling",
-					EnvVar: workersEnv,
-					Value:  workersDefault,
-				},
-				cli.BoolFlag{
-					Name:   dryRunFlag,
-					Usage:  "Print issues that would be labeled without making any changes",
-					EnvVar: dryRunEnv,
-				},
+				Action: addLabels,
 			},
-			Action: addLabels,
-		},
-		{
-			Name:      "generate",
-			ShortName: "g",
-			Usage:     "Generate change log",
-			Flags: []cli.Flag{
-				cli.StringFlag{
-					Name:     labelFlag,
-					EnvVar:   labelEnv,
-					Usage:    "GitHub label name to generate changelog from",
-					Required: true,
+			{
+				Name:    "generate",
+				Aliases: []string{"g"},
+				Usage:   "Generate change log",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:     labelFlag,
+						Sources:  cli.EnvVars(labelEnv),
+						Usage:    "GitHub label name to generate changelog from",
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:     gitApiTokenFlag,
+						Usage:    "GitHub API Token",
+						Sources:  cli.EnvVars(gitApiTokenEnv),
+						Required: true,
+					},
+					&cli.StringFlag{
+						Name:    githubOrgFlag,
+						Usage:   "GitHub organization",
+						Sources: cli.EnvVars(githubOrgEnv),
+						Value:   githubOrgDefault,
+					},
+					&cli.StringFlag{
+						Name:    githubRepoFlag,
+						Usage:   "GitHub repository",
+						Sources: cli.EnvVars(githubRepoEnv),
+						Value:   githubRepoDefault,
+					},
 				},
-				cli.StringFlag{
-					Name:     gitApiTokenFlag,
-					Usage:    "GitHub API Token",
-					EnvVar:   gitApiTokenEnv,
-					Required: true,
-				},
-				cli.StringFlag{
-					Name:   githubOrgFlag,
-					Usage:  "GitHub organization",
-					EnvVar: githubOrgEnv,
-					Value:  githubOrgDefault,
-				},
-				cli.StringFlag{
-					Name:   githubRepoFlag,
-					Usage:  "GitHub repository",
-					EnvVar: githubRepoEnv,
-					Value:  githubRepoDefault,
-				},
+				Action: generateChangelog,
 			},
-			Action: generateChangelog,
 		},
 	}
-
-	return app
 }
 
 func addLabelsParallel(client *github.Client, githubOrg, githubRepo string, issueIds []int, label string, bar *progress.Bar, numWorkers int) {
@@ -184,16 +181,16 @@ func addLabelsParallel(client *github.Client, githubOrg, githubRepo string, issu
 	wg.Wait()
 }
 
-func addLabels(c *cli.Context) error {
-	token := c.String(gitApiTokenFlag)
-	gitDir := c.String(gitDirFlag)
-	from := c.String(fromFlag)
-	target := c.String(targetFlag)
-	githubOrg := c.String(githubOrgFlag)
-	githubRepo := c.String(githubRepoFlag)
-	label := c.String(labelFlag)
-	numWorkers := c.Int(workersFlag)
-	dryRun := c.Bool(dryRunFlag)
+func addLabels(_ context.Context, cmd *cli.Command) error {
+	token := cmd.String(gitApiTokenFlag)
+	gitDir := cmd.String(gitDirFlag)
+	from := cmd.String(fromFlag)
+	target := cmd.String(targetFlag)
+	githubOrg := cmd.String(githubOrgFlag)
+	githubRepo := cmd.String(githubRepoFlag)
+	label := cmd.String(labelFlag)
+	numWorkers := cmd.Int(workersFlag)
+	dryRun := cmd.Bool(dryRunFlag)
 
 	// Validate number of workers
 	if numWorkers <= 0 {
@@ -232,11 +229,11 @@ func addLabels(c *cli.Context) error {
 	return nil
 }
 
-func generateChangelog(c *cli.Context) error {
-	token := c.String(gitApiTokenFlag)
-	githubOrg := c.String(githubOrgFlag)
-	githubRepo := c.String(githubRepoFlag)
-	label := c.String(labelFlag)
+func generateChangelog(_ context.Context, cmd *cli.Command) error {
+	token := cmd.String(gitApiTokenFlag)
+	githubOrg := cmd.String(githubOrgFlag)
+	githubRepo := cmd.String(githubRepoFlag)
+	label := cmd.String(labelFlag)
 
 	client := github.NewClient(token)
 
