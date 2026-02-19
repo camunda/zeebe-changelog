@@ -46,6 +46,7 @@ Generate changelog for [Camunda 8](github.com/camunda/camunda) project.
      --label="version:$ZCL_TARGET_REV" \
      --org camunda --repo camunda
 ```
+
 ## Release ZCL
 
 * [Prerequisite] Install [goreleaser](https://goreleaser.com/intro/#usage)
