@@ -146,7 +146,7 @@ func TestEnsureLabelExists_LabelAlreadyExists(t *testing.T) {
 		sleep:  func(_ time.Duration) {},
 	}
 
-	ghc.EnsureLabelExists("testorg", "testrepo", "test-label")
+	ghc.EnsureLabelExists("testorg", "testrepo", "test-label", false)
 
 	if getCalls != 1 {
 		t.Errorf("Expected 1 GET call, got %d", getCalls)
@@ -194,7 +194,7 @@ func TestEnsureLabelExists_CreatesAndVerifiesLabel(t *testing.T) {
 		sleep:  func(d time.Duration) { slept = d },
 	}
 
-	ghc.EnsureLabelExists("testorg", "testrepo", "test-label")
+	ghc.EnsureLabelExists("testorg", "testrepo", "test-label", false)
 
 	if getCalls != 2 {
 		t.Errorf("Expected 2 GET calls, got %d", getCalls)
@@ -235,5 +235,47 @@ func TestLabelExists_LabelMissing(t *testing.T) {
 	}
 	if exists {
 		t.Error("Expected label to be missing")
+	}
+}
+
+func TestEnsureLabelExists_DryRunDoesNotCreateLabel(t *testing.T) {
+	getCalls := 0
+	postCalls := 0
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodGet && r.URL.Path == "/repos/testorg/testrepo/labels/test-label":
+			getCalls++
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(`{"message":"Not Found"}`))
+		case r.Method == http.MethodPost && r.URL.Path == "/repos/testorg/testrepo/labels":
+			postCalls++
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			w.Write([]byte(`{"name":"test-label","color":"8e8e8e"}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	client := github.NewClient(nil)
+	baseURL, _ := url.Parse(server.URL + "/")
+	client.BaseURL = baseURL
+
+	ghc := &Client{
+		client: client,
+		ctx:    context.Background(),
+		sleep:  func(_ time.Duration) {},
+	}
+
+	ghc.EnsureLabelExists("testorg", "testrepo", "test-label", true)
+
+	if getCalls != 1 {
+		t.Errorf("Expected 1 GET call, got %d", getCalls)
+	}
+	if postCalls != 0 {
+		t.Errorf("Expected 0 POST calls in dry-run, got %d", postCalls)
 	}
 }
