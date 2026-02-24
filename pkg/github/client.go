@@ -36,13 +36,15 @@ func NewClient(token string) *Client {
 	}
 }
 
-func (ghc *Client) EnsureLabelExists(githubOrg, githubRepo, label string) {
+func (ghc *Client) EnsureLabelExists(githubOrg, githubRepo, label string, dryRun bool) {
 	exists, err := ghc.LabelExists(githubOrg, githubRepo, label)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	if exists {
+	log.Printf("Does label %q exist in %s/%s: %t\n", label, githubOrg, githubRepo, exists)
+
+	if dryRun || exists {
 		return
 	}
 
