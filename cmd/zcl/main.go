@@ -215,13 +215,20 @@ func addLabels(_ context.Context, cmd *cli.Command) error {
 		fmt.Printf("  https://github.com/%s/%s/issues/%d\n", githubOrg, githubRepo, id)
 	}
 
+	client := github.NewClient(token)
+
 	if dryRun {
+		exists, err := client.LabelExists(githubOrg, githubRepo, label)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		log.Printf("[dry-run] Label %q exists in %s/%s: %t\n", label, githubOrg, githubRepo, exists)
 		return nil
 	}
 
-	log.Println("Updating", issueCount, "issues with", numWorkers, "workers")
+	client.EnsureLabelExists(githubOrg, githubRepo, label)
 
-	client := github.NewClient(token)
+	log.Println("Updating", issueCount, "issues with", numWorkers, "workers")
 	bar := progress.NewProgressBar(issueCount)
 
 	addLabelsParallel(client, githubOrg, githubRepo, issueIds, label, bar, numWorkers)
