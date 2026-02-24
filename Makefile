@@ -28,8 +28,8 @@ fmt:
 
 .PHONY: release
 release: fmt
-	goreleaser
+	$$(go env GOPATH)/bin/goreleaser release
 
 .PHONY: release-test
 release-test: fmt
-	goreleaser --snapshot --skip-publish --rm-dist
+	$$(go env GOPATH)/bin/goreleaser release --snapshot --skip=publish --clean

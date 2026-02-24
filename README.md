@@ -49,9 +49,8 @@ Generate changelog for [Camunda 8](github.com/camunda/camunda) project.
 
 ## Release ZCL
 
-* [Prerequisite] Install [goreleaser](https://goreleaser.com/intro/#usage)
-  * We have experienced issues with the recent versions (likely the project is not compatible with the recent versions)
-    * To overcome this we used (in the last releases): `go install github.com/goreleaser/goreleaser@v1.0.0`
+* [Prerequisite] Install [goreleaser v2](https://goreleaser.com/install/)
+    * `go install github.com/goreleaser/goreleaser/v2@latest`
 * Create a new tag with the latest changes:
   * Create tag local: `git tag <version>`
   * Push tag: `git push origin <version>`
