@@ -58,6 +58,7 @@ Generate changelog for [Camunda 8](github.com/camunda/camunda) project.
 * Release ZCL
   * Run goreleaser:
     ```sh
+    rm -rf dist/
     GITHUB_TOKEN=$(gh auth token) $(go env GOPATH)/bin/goreleaser release
     ```  
   * Verify on [release page](https://github.com/camunda/zeebe-changelog/releases)
