@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 var (
@@ -14,21 +15,20 @@ var (
 )
 
 func GetHistory(path, start, end string) string {
-	logRange := fmt.Sprintf("%s..%s", start, end)
-
-	// get date from start (to handle cases where we merged git histories)
-	getStartDateCmd := exec.Command("git", "-C", path, "log", "-1", "--format=%ai", start)
-	log.Println(getStartDateCmd)
-	out, err := getStartDateCmd.CombinedOutput()
-	startDate := string(out)
+	err := validateAncestor(path, start, end)
 	if err != nil {
-		log.Fatal(startDate, err)
+		log.Fatal(err)
 	}
 
+	logRange := fmt.Sprintf("%s..%s", start, end)
+
 	// use git command til git lib implements range feature, see https://github.com/src-d/go-git/issues/1166
-	command := exec.Command("git", "-C", path, "log", logRange, "--merges", "--since", startDate, "--")
+	// Note: We removed the --since filter because it was incorrectly filtering out backported fixes
+	// that were committed before the start tag was released. The git revision range (start..end)
+	// already correctly determines which commits are new between revisions.
+	command := exec.Command("git", "-C", path, "log", logRange, "--merges", "--")
 	log.Println(command)
-	out, err = command.CombinedOutput()
+	out, err := command.CombinedOutput()
 	result := string(out)
 
 	if err != nil {
@@ -36,6 +36,21 @@ func GetHistory(path, start, end string) string {
 	}
 
 	return result
+}
+
+func validateAncestor(path, start, end string) error {
+	command := exec.Command("git", "-C", path, "merge-base", "--is-ancestor", start, end)
+	log.Println(command)
+	out, err := command.CombinedOutput()
+	if err == nil {
+		return nil
+	}
+
+	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
+		return fmt.Errorf("invalid git range %s..%s: start is not an ancestor of end", start, end)
+	}
+
+	return fmt.Errorf("unable to validate git range %s..%s: %s (%w)", start, end, strings.TrimSpace(string(out)), err)
 }
 
 func ExtractIssueIds(message string) []int {

@@ -11,6 +11,46 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func prepareDivergedRepo(t *testing.T) (string, string, string, string) {
+	t.Helper()
+	repoDir := filepath.Join(t.TempDir(), "diverged")
+	if err := os.MkdirAll(repoDir, 0o755); err != nil {
+		t.Fatalf("mkdir temp repo: %v", err)
+	}
+
+	runGit(t, repoDir, "init")
+	runGit(t, repoDir, "config", "user.email", "zcl-tests@example.com")
+	runGit(t, repoDir, "config", "user.name", "zcl-tests")
+
+	baseFile := filepath.Join(repoDir, "base.txt")
+	if err := os.WriteFile(baseFile, []byte("base\n"), 0o644); err != nil {
+		t.Fatalf("write base file: %v", err)
+	}
+	runGit(t, repoDir, "add", "base.txt")
+	runGit(t, repoDir, "commit", "-m", "base")
+	base := strings.TrimSpace(runGit(t, repoDir, "rev-parse", "HEAD"))
+
+	runGit(t, repoDir, "checkout", "-b", "branch-a")
+	aFile := filepath.Join(repoDir, "a.txt")
+	if err := os.WriteFile(aFile, []byte("a\n"), 0o644); err != nil {
+		t.Fatalf("write branch-a file: %v", err)
+	}
+	runGit(t, repoDir, "add", "a.txt")
+	runGit(t, repoDir, "commit", "-m", "branch-a")
+	branchA := strings.TrimSpace(runGit(t, repoDir, "rev-parse", "HEAD"))
+
+	runGit(t, repoDir, "checkout", "-b", "branch-b", base)
+	bFile := filepath.Join(repoDir, "b.txt")
+	if err := os.WriteFile(bFile, []byte("b\n"), 0o644); err != nil {
+		t.Fatalf("write branch-b file: %v", err)
+	}
+	runGit(t, repoDir, "add", "b.txt")
+	runGit(t, repoDir, "commit", "-m", "branch-b")
+	branchB := strings.TrimSpace(runGit(t, repoDir, "rev-parse", "HEAD"))
+
+	return repoDir, base, branchA, branchB
+}
+
 func runGit(t *testing.T, dir string, args ...string) string {
 	t.Helper()
 	cmd := exec.Command("git", args...)
@@ -63,7 +103,7 @@ func TestGitHistory(t *testing.T) {
 		needCamunda bool
 	}{
 		"First commit in zcl":          {path: ".", start: "7b86247", end: "7ab8381", size: 0},
-		"Between tags in camunda repo": {start: "8.5.0", end: "8.6.0-alpha1", size: 1559610, needCamunda: true},
+		"Between tags in camunda repo": {start: "8.5.0", end: "8.6.0-alpha1", size: 2012037, needCamunda: true},
 	}
 
 	var camundaRepo string
@@ -79,6 +119,27 @@ func TestGitHistory(t *testing.T) {
 
 			log := GetHistory(path, tc.start, tc.end)
 			assert.Equal(t, tc.size, len(log))
+		})
+	}
+}
+
+func TestRegressionBackportIssue40036IncludedInReleaseRanges(t *testing.T) {
+	tests := map[string]struct {
+		from           string
+		to             string
+		expectedCommit string
+	}{
+		"8.6.38 range": {from: "8.6.37", to: "8.6.38", expectedCommit: "87bbd207bc0fc7e7dbfbd0ffda36af6cc35c0b50"},
+		"8.7.25 range": {from: "8.7.24", to: "8.7.25", expectedCommit: "88bdb736007a93c6abeb1eb8a14093510c915af0"},
+	}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			camundaRepo := prepareCamundaRepo(t, tc.from, tc.to)
+			history := GetHistory(camundaRepo, tc.from, tc.to)
+			assert.Contains(t, history, tc.expectedCommit)
+			issueIDs := ExtractIssueIds(history)
+			assert.Contains(t, issueIDs, 40036)
 		})
 	}
 }
@@ -124,4 +185,19 @@ func TestExtractIssueIds(t *testing.T) {
 			assert.Equal(t, tc.issueIds, issueIds)
 		})
 	}
+}
+
+func TestValidateAncestor(t *testing.T) {
+	repoDir, base, branchA, branchB := prepareDivergedRepo(t)
+
+	t.Run("valid ancestor", func(t *testing.T) {
+		err := validateAncestor(repoDir, base, branchA)
+		assert.NoError(t, err)
+	})
+
+	t.Run("non-ancestor range", func(t *testing.T) {
+		err := validateAncestor(repoDir, branchA, branchB)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "start is not an ancestor")
+	})
 }
