@@ -47,7 +47,8 @@ func validateAncestor(path, start, end string) error {
 	}
 
 	if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 {
-		return fmt.Errorf("invalid git range %s..%s: start is not an ancestor of end", start, end)
+		log.Printf("warning: git range %s..%s has start that is not an ancestor of end; continuing anyway", start, end)
+		return nil
 	}
 
 	return fmt.Errorf("unable to validate git range %s..%s: %s (%w)", start, end, strings.TrimSpace(string(out)), err)

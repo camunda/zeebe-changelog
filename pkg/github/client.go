@@ -81,10 +81,12 @@ func (ghc *Client) LabelExists(githubOrg, githubRepo, label string) (bool, error
 func (ghc *Client) AddLabel(githubOrg string, githubRepo string, issueId int, label string) {
 	_, _, err := ghc.client.Issues.AddLabelsToIssue(ghc.ctx, githubOrg, githubRepo, issueId, []string{label})
 	if err != nil {
-		// Check if the error is a 404 Not Found error
-		if errResp, ok := err.(*github.ErrorResponse); ok && errResp.Response.StatusCode == http.StatusNotFound {
-			log.Printf("Warning: Issue #%d not found in %s/%s, skipping label addition\n", issueId, githubOrg, githubRepo)
-			return
+		if errResp, ok := err.(*github.ErrorResponse); ok && errResp.Response != nil {
+			if errResp.Response.StatusCode == http.StatusNotFound ||
+				errResp.Response.StatusCode == http.StatusUnprocessableEntity {
+				log.Printf("Warning: Issue #%d could not be labeled in %s/%s, skipping label addition: %v\n", issueId, githubOrg, githubRepo, err)
+				return
+			}
 		}
 		log.Fatalln(err)
 	}

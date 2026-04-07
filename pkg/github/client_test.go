@@ -47,8 +47,48 @@ func TestAddLabel_404Error(t *testing.T) {
 
 	// Verify that a warning was logged instead of a fatal error
 	logOutput := buf.String()
-	if !strings.Contains(logOutput, "Warning: Issue #12345 not found") {
+	if !strings.Contains(logOutput, "Warning: Issue #12345 could not be labeled") {
 		t.Errorf("Expected warning message in log output, got: %s", logOutput)
+	}
+	if !strings.Contains(logOutput, "404 Not Found") {
+		t.Errorf("Expected not-found details in log output, got: %s", logOutput)
+	}
+	if !strings.Contains(logOutput, "testorg/testrepo") {
+		t.Errorf("Expected org/repo in log output, got: %s", logOutput)
+	}
+}
+
+func TestAddLabel_422MissingNodeWarns(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte(`{"message":"Validation Failed","errors":[{"resource":"Label","field":"data","code":"unprocessable","message":"Could not resolve to a node with the global id of 'I_kwDOAzyJQs73cw6O'."}]}`))
+	}))
+	defer server.Close()
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer func() {
+		log.SetOutput(os.Stderr)
+	}()
+
+	client := github.NewClient(nil)
+	baseURL, _ := url.Parse(server.URL + "/")
+	client.BaseURL = baseURL
+
+	ghc := &Client{
+		client: client,
+		ctx:    context.Background(),
+	}
+
+	ghc.AddLabel("testorg", "testrepo", 49820, "test-label")
+
+	logOutput := buf.String()
+	if !strings.Contains(logOutput, "Warning: Issue #49820 could not be labeled") {
+		t.Errorf("Expected warning message in log output, got: %s", logOutput)
+	}
+	if !strings.Contains(logOutput, "Could not resolve to a node") {
+		t.Errorf("Expected missing-node error details in log output, got: %s", logOutput)
 	}
 	if !strings.Contains(logOutput, "testorg/testrepo") {
 		t.Errorf("Expected org/repo in log output, got: %s", logOutput)
