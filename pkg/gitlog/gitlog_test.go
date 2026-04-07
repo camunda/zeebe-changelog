@@ -197,7 +197,13 @@ func TestValidateAncestor(t *testing.T) {
 
 	t.Run("non-ancestor range", func(t *testing.T) {
 		err := validateAncestor(repoDir, branchA, branchB)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "start is not an ancestor")
+		assert.NoError(t, err)
 	})
+}
+
+func TestGetHistoryAllowsNonAncestorRanges(t *testing.T) {
+	repoDir, _, branchA, branchB := prepareDivergedRepo(t)
+
+	history := GetHistory(repoDir, branchA, branchB)
+	assert.Equal(t, "", history)
 }
